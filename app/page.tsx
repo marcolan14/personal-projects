@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import LogoutButton from '@/components/LogoutButton'
 import WodSection from '@/components/WodSection'
 
@@ -26,7 +27,12 @@ export default async function Home() {
     <main className="min-h-screen bg-gray-950 text-white">
       <header className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
         <h1 className="font-bold text-lg text-orange-500">CrossFit Tracker</h1>
-        <LogoutButton />
+        <div className="flex items-center gap-4">
+          <Link href="/profile" className="text-xs text-gray-400 hover:text-white transition-colors">
+            Profilo
+          </Link>
+          <LogoutButton />
+        </div>
       </header>
 
       <div className="px-4 py-6 max-w-lg mx-auto space-y-6">

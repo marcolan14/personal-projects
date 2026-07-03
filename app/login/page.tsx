@@ -16,18 +16,22 @@ export default function LoginPage() {
     setPending(true)
     setError(null)
 
-    const supabase = createSupabaseBrowserClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${location.origin}/auth/callback` },
-    })
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${location.origin}/auth/callback` },
+      })
 
-    setPending(false)
-
-    if (error) {
-      setError(error.message)
-    } else {
-      setSuccess(true)
+      if (error) {
+        setError(error.message)
+      } else {
+        setSuccess(true)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Errore sconosciuto')
+    } finally {
+      setPending(false)
     }
   }
 
