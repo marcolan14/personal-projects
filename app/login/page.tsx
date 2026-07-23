@@ -19,7 +19,6 @@ function LoginForm() {
     setError(null)
 
     try {
-      alert(`DEBUG location.origin = ${location.origin}`)
       const supabase = createSupabaseBrowserClient()
       const { error } = await supabase.auth.signInWithOtp({
         email,
