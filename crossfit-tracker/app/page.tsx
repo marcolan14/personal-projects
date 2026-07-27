@@ -12,9 +12,12 @@ export default async function Home() {
 
   const today = new Date().toISOString().split('T')[0]
 
-  const [{ data: workout }, { data: profile }, { data: todayResult }] = await Promise.all([
+  const [{ data: workout }, { data: profileHistory }, { data: todayResult }] = await Promise.all([
     supabase.from('workouts').select('*').eq('date', today).single(),
-    supabase.from('fitness_profile').select('name, value, unit').eq('user_id', user.id),
+    supabase.from('fitness_profile')
+      .select('name, value, unit, recorded_on')
+      .eq('user_id', user.id)
+      .order('recorded_on', { ascending: false }),
     supabase.from('results')
       .select('id')
       .eq('user_id', user.id)
@@ -22,6 +25,22 @@ export default async function Home() {
       .limit(1)
       .maybeSingle(),
   ])
+
+  // one entry per benchmark: the most recent result, used to suggest loads
+  const latestByName = new Map<string, { name: string; value: string; unit: string | null }>()
+  for (const entry of profileHistory ?? []) {
+    if (!latestByName.has(entry.name)) latestByName.set(entry.name, entry)
+  }
+  const profile = Array.from(latestByName.values())
+
+  const { data: recommendation } = workout
+    ? await supabase
+        .from('wod_recommendations')
+        .select('recommendations, expected_result')
+        .eq('user_id', user.id)
+        .eq('workout_id', workout.id)
+        .maybeSingle()
+    : { data: null }
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -47,6 +66,7 @@ export default async function Home() {
           workout={workout}
           profile={profile ?? []}
           existingResult={!!todayResult}
+          initialRecommendation={recommendation ?? null}
         />
       </div>
     </main>

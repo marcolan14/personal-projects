@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { WodMeta, WodSection, FitnessEntry } from '@/lib/types'
+import TimeInput from './TimeInput'
 
 type SetRow = { weight: string; reps: string }
 
@@ -376,7 +377,7 @@ function ForTimeSection({
           <TimeInput
             value={times[0] ?? ''}
             onChange={val => onUpdateTime(0, val)}
-            className="w-32 bg-gray-700 text-xl text-white placeholder-gray-500 px-4 py-3 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-center"
+            className="w-32 bg-gray-700 text-xl text-white placeholder-gray-500 px-4 py-3 rounded-lg focus-within:ring-1 focus-within:ring-orange-500"
           />
         ) : (
           <div className="grid grid-cols-2 gap-2">
@@ -386,7 +387,7 @@ function ForTimeSection({
                 <TimeInput
                   value={t}
                   onChange={val => onUpdateTime(ti, val)}
-                  className="flex-1 bg-gray-700 text-sm text-white placeholder-gray-500 px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-center"
+                  className="flex-1 bg-gray-700 text-sm text-white placeholder-gray-500 px-3 py-2 rounded-lg focus-within:ring-1 focus-within:ring-orange-500"
                 />
               </div>
             ))}
@@ -394,31 +395,6 @@ function ForTimeSection({
         )}
       </div>
     </div>
-  )
-}
-
-function TimeInput({ value, onChange, className }: {
-  value: string
-  onChange: (formatted: string) => void
-  className?: string
-}) {
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const digits = e.target.value.replace(/\D/g, '').slice(0, 4)
-    if (!digits) { onChange(''); return }
-    const sec = digits.slice(-2).padStart(2, '0')
-    const min = digits.length > 2 ? parseInt(digits.slice(0, -2)).toString() : '0'
-    onChange(`${min}:${sec}`)
-  }
-
-  return (
-    <input
-      type="text"
-      inputMode="numeric"
-      value={value}
-      onChange={handleChange}
-      placeholder="0:00"
-      className={className}
-    />
   )
 }
 
