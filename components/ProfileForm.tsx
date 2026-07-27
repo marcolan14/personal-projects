@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { PRESET_PROFILE } from '@/lib/profile-presets'
 import { FitnessHistoryEntry } from '@/lib/types'
+import TimeInput from './TimeInput'
 
 type Benchmark = { name: string; unit: string; entries: FitnessHistoryEntry[] }
 
@@ -154,14 +155,22 @@ function BenchmarkCard({
       {adding && (
         <div className="space-y-1 pt-1">
           <div className="flex items-center gap-2">
-            <input
-              type={inputType}
-              inputMode={inputType === 'number' ? 'decimal' : 'text'}
-              value={value}
-              onChange={e => setValue(e.target.value)}
-              placeholder={benchmark.unit || 'valore'}
-              className="w-24 bg-gray-800 text-sm text-white placeholder-gray-600 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-center"
-            />
+            {benchmark.unit === 'mm:ss' ? (
+              <TimeInput
+                value={value}
+                onChange={setValue}
+                className="w-20 bg-gray-800 text-sm text-white placeholder-gray-600 px-3 py-1.5 rounded-lg focus-within:ring-1 focus-within:ring-orange-500"
+              />
+            ) : (
+              <input
+                type={inputType}
+                inputMode={inputType === 'number' ? 'decimal' : 'text'}
+                value={value}
+                onChange={e => setValue(e.target.value)}
+                placeholder={benchmark.unit || 'valore'}
+                className="w-24 bg-gray-800 text-sm text-white placeholder-gray-600 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-center"
+              />
+            )}
             <input
               type="date"
               value={recordedOn}
@@ -258,13 +267,21 @@ function CustomBenchmarks({
             className="w-full bg-gray-800 text-sm text-white placeholder-gray-600 px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
           />
           <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={value}
-              onChange={e => setValue(e.target.value)}
-              placeholder="Valore"
-              className="flex-1 bg-gray-800 text-sm text-white placeholder-gray-600 px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
-            />
+            {unit.trim().toLowerCase() === 'mm:ss' ? (
+              <TimeInput
+                value={value}
+                onChange={setValue}
+                className="flex-1 bg-gray-800 text-sm text-white placeholder-gray-600 px-3 py-2 rounded-lg focus-within:ring-1 focus-within:ring-orange-500"
+              />
+            ) : (
+              <input
+                type="text"
+                value={value}
+                onChange={e => setValue(e.target.value)}
+                placeholder="Valore"
+                className="flex-1 bg-gray-800 text-sm text-white placeholder-gray-600 px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
+              />
+            )}
             <input
               type="text"
               value={unit}
