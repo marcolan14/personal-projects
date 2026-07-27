@@ -9,10 +9,11 @@ export default async function ProfilePage() {
 
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
+  const { data: history } = await supabase
     .from('fitness_profile')
-    .select('name, value, unit')
+    .select('id, name, value, unit, recorded_on')
     .eq('user_id', user.id)
+    .order('recorded_on', { ascending: false })
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -26,9 +27,10 @@ export default async function ProfilePage() {
 
       <div className="px-4 py-6 max-w-lg mx-auto">
         <p className="text-sm text-gray-500 mb-6">
-          Inserisci i tuoi massimali e benchmark. Lascia vuoti quelli che non hai ancora misurato.
+          Registra i tuoi massimali e benchmark. Aggiungi un nuovo risultato ogni volta che migliori,
+          così puoi seguire i tuoi progressi nel tempo.
         </p>
-        <ProfileForm existing={profile ?? []} />
+        <ProfileForm history={history ?? []} />
       </div>
     </main>
   )

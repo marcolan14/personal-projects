@@ -38,15 +38,17 @@ create policy "results_own" on results
   for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 
--- fitness_profile: massimali e benchmark personali (coppie nome/valore)
+-- fitness_profile: storico dei massimali e benchmark personali
+-- (più risultati per indicatore, uno per data, per seguire i progressi nel tempo)
 create table fitness_profile (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
   value text not null,
   unit text,
-  updated_at timestamptz not null default now(),
-  unique(user_id, name)
+  recorded_on date not null default current_date,
+  created_at timestamptz not null default now(),
+  unique(user_id, name, recorded_on)
 );
 
 alter table fitness_profile enable row level security;
