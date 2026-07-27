@@ -30,3 +30,8 @@ export type FitnessHistoryEntry = FitnessEntry & {
   id: string
   recorded_on: string
 }
+
+export type WodRecommendation = {
+  recommendations: string
+  expected_result: string
+}

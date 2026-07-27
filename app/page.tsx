@@ -33,6 +33,15 @@ export default async function Home() {
   }
   const profile = Array.from(latestByName.values())
 
+  const { data: recommendation } = workout
+    ? await supabase
+        .from('wod_recommendations')
+        .select('recommendations, expected_result')
+        .eq('user_id', user.id)
+        .eq('workout_id', workout.id)
+        .maybeSingle()
+    : { data: null }
+
   return (
     <main className="min-h-screen bg-gray-950 text-white">
       <header className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
@@ -57,6 +66,7 @@ export default async function Home() {
           workout={workout}
           profile={profile ?? []}
           existingResult={!!todayResult}
+          initialRecommendation={recommendation ?? null}
         />
       </div>
     </main>

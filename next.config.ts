@@ -5,6 +5,13 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  experimental: {
+    // The persistent filesystem cache (on by default since 16.1) has repeatedly
+    // corrupted itself ("Persisting failed: Another write batch or compaction
+    // is already active") during normal dev use. Disabling it trades away some
+    // rebuild speed for not having the dev server randomly break.
+    turbopackFileSystemCacheForDev: false,
+  },
   /* config options here */
 };
 

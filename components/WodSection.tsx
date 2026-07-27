@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { WodMeta, FitnessEntry } from '@/lib/types'
+import { WodMeta, FitnessEntry, WodRecommendation as WodRecommendationType } from '@/lib/types'
 import ResultForm from './ResultForm'
+import WodRecommendation from './WodRecommendation'
 
 type Workout = {
   id: string
@@ -16,6 +17,7 @@ type Props = {
   workout: Workout
   profile: FitnessEntry[]
   existingResult: boolean
+  initialRecommendation: WodRecommendationType | null
 }
 
 type WorkoutState = {
@@ -24,7 +26,7 @@ type WorkoutState = {
   wodMeta: WodMeta | null
 }
 
-export default function WodSection({ workout, profile, existingResult }: Props) {
+export default function WodSection({ workout, profile, existingResult, initialRecommendation }: Props) {
   const [wod, setWod] = useState<WorkoutState>({
     id: workout?.id ?? null,
     rawText: workout?.raw_text ?? null,
@@ -39,6 +41,7 @@ export default function WodSection({ workout, profile, existingResult }: Props) 
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [recommendation, setRecommendation] = useState<WodRecommendationType | null>(initialRecommendation)
 
   async function handleSaveEdit() {
     if (!wod.id || !editText.trim()) return
@@ -55,6 +58,7 @@ export default function WodSection({ workout, profile, existingResult }: Props) 
         throw new Error(data.error ?? `Errore ${res.status}`)
       }
       setWod(prev => ({ ...prev, rawText: editText.trim() }))
+      setRecommendation(null)
       setEditing(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto')
@@ -100,6 +104,7 @@ export default function WodSection({ workout, profile, existingResult }: Props) 
       setWod({ id: data.workoutId, rawText: data.rawText, wodMeta: data.wodMeta })
       setReplacing(false)
       setResultSaved(false)
+      setRecommendation(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto')
     } finally {
@@ -179,6 +184,14 @@ export default function WodSection({ workout, profile, existingResult }: Props) 
             </button>
           </div>
         </div>
+
+        {wod.id && hasWorkoutSections(wod.wodMeta) && (
+          <WodRecommendation
+            workoutId={wod.id}
+            recommendation={recommendation}
+            onGenerated={setRecommendation}
+          />
+        )}
 
         {resultSaved ? (
           <div className="bg-green-900/30 border border-green-800 rounded-xl px-4 py-3 text-sm text-green-300">
