@@ -111,7 +111,7 @@ function BenchmarkCard({
   const [adding, setAdding] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [value, setValue] = useState('')
-  const [recordedOn, setRecordedOn] = useState(today())
+  const [recordedOn, setRecordedOn] = useState('')
   const [saving, setSaving] = useState(false)
 
   const latest = benchmark.entries[0]
@@ -122,7 +122,7 @@ function BenchmarkCard({
     await onAdd(benchmark.name, benchmark.unit, value.trim(), recordedOn)
     setSaving(false)
     setValue('')
-    setRecordedOn(today())
+    setRecordedOn('')
     setAdding(false)
   }
 
@@ -152,29 +152,33 @@ function BenchmarkCard({
       </div>
 
       {adding && (
-        <div className="flex items-center gap-2 pt-1">
-          <input
-            type={inputType}
-            inputMode={inputType === 'number' ? 'decimal' : 'text'}
-            value={value}
-            onChange={e => setValue(e.target.value)}
-            placeholder={benchmark.unit || 'valore'}
-            className="w-24 bg-gray-800 text-sm text-white placeholder-gray-600 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-center"
-          />
-          <input
-            type="date"
-            value={recordedOn}
-            max={today()}
-            onChange={e => setRecordedOn(e.target.value)}
-            className="bg-gray-800 text-sm text-white px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
-          />
-          <button
-            onClick={handleAdd}
-            disabled={saving || !value.trim()}
-            className="flex-1 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-xs font-semibold transition-colors"
-          >
-            {saving ? 'Salvataggio…' : 'Salva'}
-          </button>
+        <div className="space-y-1 pt-1">
+          <div className="flex items-center gap-2">
+            <input
+              type={inputType}
+              inputMode={inputType === 'number' ? 'decimal' : 'text'}
+              value={value}
+              onChange={e => setValue(e.target.value)}
+              placeholder={benchmark.unit || 'valore'}
+              className="w-24 bg-gray-800 text-sm text-white placeholder-gray-600 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-center"
+            />
+            <input
+              type="date"
+              value={recordedOn}
+              max={today()}
+              onChange={e => setRecordedOn(e.target.value)}
+              title="Facoltativo — oggi se vuoto"
+              className="bg-gray-800 text-sm text-white px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
+            />
+            <button
+              onClick={handleAdd}
+              disabled={saving || !value.trim()}
+              className="flex-1 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-xs font-semibold transition-colors"
+            >
+              {saving ? 'Salvataggio…' : 'Salva'}
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-600">Data facoltativa: se non la imposti conta come oggi.</p>
         </div>
       )}
 
@@ -209,7 +213,7 @@ function CustomBenchmarks({
   const [name, setName] = useState('')
   const [unit, setUnit] = useState('')
   const [value, setValue] = useState('')
-  const [recordedOn, setRecordedOn] = useState(today())
+  const [recordedOn, setRecordedOn] = useState('')
   const [saving, setSaving] = useState(false)
 
   async function handleCreate() {
@@ -220,7 +224,7 @@ function CustomBenchmarks({
     setName('')
     setUnit('')
     setValue('')
-    setRecordedOn(today())
+    setRecordedOn('')
     setCreating(false)
   }
 
@@ -273,9 +277,11 @@ function CustomBenchmarks({
               value={recordedOn}
               max={today()}
               onChange={e => setRecordedOn(e.target.value)}
+              title="Facoltativo — oggi se vuoto"
               className="bg-gray-800 text-sm text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
           </div>
+          <p className="text-[11px] text-gray-600">Data facoltativa: se non la imposti conta come oggi.</p>
           <div className="flex gap-2">
             <button
               onClick={handleCreate}

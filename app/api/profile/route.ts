@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const { name, value, unit, recorded_on } = await request.json()
 
-    if (!name?.trim() || !value?.toString().trim() || !recorded_on) {
+    if (!name?.trim() || !value?.toString().trim()) {
       return Response.json({ error: 'Dati mancanti' }, { status: 400 })
     }
 
@@ -16,10 +16,12 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Non autenticato' }, { status: 401 })
     }
 
+    const date = recorded_on?.trim() || new Date().toISOString().split('T')[0]
+
     const { data, error } = await supabase
       .from('fitness_profile')
       .upsert(
-        { user_id: user.id, name: name.trim(), value: value.toString().trim(), unit, recorded_on },
+        { user_id: user.id, name: name.trim(), value: value.toString().trim(), unit, recorded_on: date },
         { onConflict: 'user_id,name,recorded_on' }
       )
       .select('id, name, value, unit, recorded_on')
