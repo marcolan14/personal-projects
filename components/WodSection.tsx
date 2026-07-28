@@ -58,7 +58,8 @@ export default function WodSection({ workout, profile, existingResult, initialRe
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error ?? `Errore ${res.status}`)
       }
-      setWod(prev => ({ ...prev, rawText: editText.trim() }))
+      const data = await res.json()
+      setWod(prev => ({ ...prev, rawText: data.raw_text, wodMeta: data.wod_meta ?? prev.wodMeta }))
       setRecommendation(null)
       setEditing(false)
     } catch (err) {
