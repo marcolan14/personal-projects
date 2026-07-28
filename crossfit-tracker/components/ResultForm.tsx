@@ -22,7 +22,7 @@ type Props = {
   workoutId: string
   meta: WodMeta
   profile: FitnessEntry[]
-  onSaved: () => void
+  onSaved: (comment: string | null) => void
   onCancel: () => void
 }
 
@@ -148,7 +148,8 @@ export default function ResultForm({ workoutId, meta, profile, onSaved, onCancel
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error ?? `Errore ${res.status}`)
       }
-      onSaved()
+      const data = await res.json()
+      onSaved(data.comment ?? null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto')
     } finally {

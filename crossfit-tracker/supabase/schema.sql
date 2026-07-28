@@ -29,6 +29,7 @@ create table results (
   result text not null,
   rx boolean not null default true,
   notes text,
+  comment text,
   created_at timestamptz not null default now()
 );
 

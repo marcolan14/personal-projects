@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { WodMeta } from '@/lib/types'
+import { todayISO } from '@/lib/dates'
 import { NextRequest } from 'next/server'
 
 type ImageInput = {
@@ -35,9 +36,11 @@ const PROMPT = `Analizza queste immagini del WOD CrossFit. Restituisci SOLO un o
 }
 Includi solo i campi presenti nel WOD. Converti sempre i pesi in kg. Per WOD con più parti usa più elementi in sections.`
 
+const isoDateRe = /^\d{4}-\d{2}-\d{2}$/
+
 export async function POST(request: NextRequest) {
   try {
-    const { images }: { images: ImageInput[] } = await request.json()
+    const { images, date }: { images: ImageInput[]; date?: string } = await request.json()
 
     if (!images?.length) {
       return Response.json({ error: 'Nessuna immagine ricevuta' }, { status: 400 })
@@ -83,12 +86,13 @@ export async function POST(request: NextRequest) {
       wodMeta = null
     }
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = todayISO()
+    const targetDate = date && isoDateRe.test(date) && date <= today ? date : today
 
     const { data: workout, error: dbError } = await supabase
       .from('workouts')
       .upsert(
-        { date: today, raw_text: rawText, wod_meta: wodMeta },
+        { date: targetDate, raw_text: rawText, wod_meta: wodMeta },
         { onConflict: 'date' }
       )
       .select('id')

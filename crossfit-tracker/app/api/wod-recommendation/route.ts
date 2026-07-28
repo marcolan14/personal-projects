@@ -1,15 +1,19 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { buildResultHistoryText } from '@/lib/result-history'
 import { NextRequest } from 'next/server'
 
-const PROMPT_TEMPLATE = (wodText: string, profileText: string) => `Sei un coach di CrossFit esperto. Ecco il WOD di oggi:
+const PROMPT_TEMPLATE = (wodText: string, profileText: string, historyText: string) => `Sei un coach di CrossFit esperto. Ecco il WOD di oggi:
 
 ${wodText}
 
 Profilo atletico dell'utente (massimali/benchmark noti, valore più recente per ciascuno):
 ${profileText}
 
-Chiama il tool "submit_recommendation" con i tuoi consigli. Se per un movimento non ci sono dati rilevanti nel profilo, dai comunque un consiglio generico ragionevole per un atleta intermedio. Sii specifico e concreto, evita frasi generiche.`
+Storico dei risultati recenti dell'utente (più recenti prima):
+${historyText}
+
+Chiama il tool "submit_recommendation" con i tuoi consigli. Usa lo storico per calibrare consigli e stima in base alle tendenze reali dell'utente (es. se supera spesso le aspettative, se fatica su certi movimenti o formati). Se per un movimento non ci sono dati rilevanti nel profilo, dai comunque un consiglio generico ragionevole per un atleta intermedio. Sii specifico e concreto, evita frasi generiche.`
 
 const RECOMMENDATION_TOOL: Anthropic.Tool = {
   name: 'submit_recommendation',
@@ -67,6 +71,8 @@ export async function POST(request: NextRequest) {
       ? profile.map(p => `- ${p.name}: ${p.value}${p.unit ? ' ' + p.unit : ''}`).join('\n')
       : 'Nessun dato disponibile.'
 
+    const historyText = await buildResultHistoryText(supabase, user.id)
+
     const client = new Anthropic()
 
     const message = await client.messages.create({
@@ -74,7 +80,7 @@ export async function POST(request: NextRequest) {
       max_tokens: 2048,
       tools: [RECOMMENDATION_TOOL],
       tool_choice: { type: 'tool', name: RECOMMENDATION_TOOL.name },
-      messages: [{ role: 'user', content: PROMPT_TEMPLATE(workout.raw_text, profileText) }],
+      messages: [{ role: 'user', content: PROMPT_TEMPLATE(workout.raw_text, profileText, historyText) }],
     })
 
     const toolUse = message.content.find(block => block.type === 'tool_use')

@@ -12,11 +12,18 @@ export default function TimeInput({ value, onChange, className }: Props) {
   const [rawMin = '', rawSec = ''] = value.split(':')
   const minRef = useRef<HTMLInputElement>(null)
   const secRef = useRef<HTMLInputElement>(null)
+  const advancingToSec = useRef(false)
 
   function handleMinChange(e: React.ChangeEvent<HTMLInputElement>) {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 2)
     onChange(`${digits}:${rawSec}`)
-    if (digits.length === 2) secRef.current?.focus()
+    if (digits.length === 2) {
+      // Focusing another input synchronously fires this field's onBlur first,
+      // whose closure still holds the pre-keystroke value — skip its stale
+      // re-emit (see handleMinBlur) since we just sent the correct one above.
+      advancingToSec.current = true
+      secRef.current?.focus()
+    }
   }
 
   function handleSecChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -25,6 +32,10 @@ export default function TimeInput({ value, onChange, className }: Props) {
   }
 
   function handleMinBlur() {
+    if (advancingToSec.current) {
+      advancingToSec.current = false
+      return
+    }
     if (rawMin) onChange(`${rawMin.padStart(2, '0')}:${rawSec}`)
   }
 

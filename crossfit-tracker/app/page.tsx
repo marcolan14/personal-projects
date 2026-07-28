@@ -3,27 +3,50 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import LogoutButton from '@/components/LogoutButton'
 import WodSection from '@/components/WodSection'
+import DateNav from '@/components/DateNav'
+import { todayISO } from '@/lib/dates'
 
-export default async function Home() {
+const isoDateRe = /^\d{4}-\d{2}-\d{2}$/
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>
+}) {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
 
-  const today = new Date().toISOString().split('T')[0]
+  const todayDate = todayISO()
+  const { date: dateParam } = await searchParams
+  const selectedDate = dateParam && isoDateRe.test(dateParam) && dateParam <= todayDate
+    ? dateParam
+    : todayDate
 
-  const [{ data: workout }, { data: profileHistory }, { data: todayResult }] = await Promise.all([
-    supabase.from('workouts').select('*').eq('date', today).single(),
+  const { data: workout } = await supabase.from('workouts').select('*').eq('date', selectedDate).single()
+
+  const [{ data: profileHistory }, { data: existingResult }, { data: recommendation }] = await Promise.all([
     supabase.from('fitness_profile')
       .select('name, value, unit, recorded_on')
       .eq('user_id', user.id)
       .order('recorded_on', { ascending: false }),
-    supabase.from('results')
-      .select('id')
-      .eq('user_id', user.id)
-      .gte('created_at', `${today}T00:00:00`)
-      .limit(1)
-      .maybeSingle(),
+    workout
+      ? supabase.from('results')
+          .select('id, comment')
+          .eq('user_id', user.id)
+          .eq('workout_id', workout.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    workout
+      ? supabase.from('wod_recommendations')
+          .select('recommendations, expected_result')
+          .eq('user_id', user.id)
+          .eq('workout_id', workout.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
   // one entry per benchmark: the most recent result, used to suggest loads
@@ -32,15 +55,6 @@ export default async function Home() {
     if (!latestByName.has(entry.name)) latestByName.set(entry.name, entry)
   }
   const profile = Array.from(latestByName.values())
-
-  const { data: recommendation } = workout
-    ? await supabase
-        .from('wod_recommendations')
-        .select('recommendations, expected_result')
-        .eq('user_id', user.id)
-        .eq('workout_id', workout.id)
-        .maybeSingle()
-    : { data: null }
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -55,17 +69,15 @@ export default async function Home() {
       </header>
 
       <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
-        <div>
-          <p className="text-xs text-gray-500 uppercase tracking-widest">
-            {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
-          <h2 className="text-xl font-bold mt-1">WOD di oggi</h2>
-        </div>
+        <DateNav selectedDate={selectedDate} todayDate={todayDate} />
 
         <WodSection
+          key={selectedDate}
+          date={selectedDate}
           workout={workout}
           profile={profile ?? []}
-          existingResult={!!todayResult}
+          existingResult={!!existingResult}
+          existingResultComment={existingResult?.comment ?? null}
           initialRecommendation={recommendation ?? null}
         />
       </div>
