@@ -18,6 +18,7 @@ type Props = {
   profile: FitnessEntry[]
   existingResult: boolean
   initialRecommendation: WodRecommendationType | null
+  date: string
 }
 
 type WorkoutState = {
@@ -26,7 +27,7 @@ type WorkoutState = {
   wodMeta: WodMeta | null
 }
 
-export default function WodSection({ workout, profile, existingResult, initialRecommendation }: Props) {
+export default function WodSection({ workout, profile, existingResult, initialRecommendation, date }: Props) {
   const [wod, setWod] = useState<WorkoutState>({
     id: workout?.id ?? null,
     rawText: workout?.raw_text ?? null,
@@ -88,7 +89,7 @@ export default function WodSection({ workout, profile, existingResult, initialRe
       const res = await fetch('/api/extract-wod', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ images }),
+        body: JSON.stringify({ images, date }),
       })
 
       if (!res.ok) {
@@ -215,7 +216,7 @@ export default function WodSection({ workout, profile, existingResult, initialRe
       <div className="text-4xl">📸</div>
       <div>
         <p className="font-semibold text-gray-200">
-          {replacing ? 'Carica nuovi screenshot' : 'Nessun WOD per oggi'}
+          {replacing ? 'Carica nuovi screenshot' : 'Nessun WOD per questo giorno'}
         </p>
         <p className="text-sm text-gray-500 mt-1">
           Carica uno o più screenshot della pagina WOD

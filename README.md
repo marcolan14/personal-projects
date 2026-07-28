@@ -10,6 +10,7 @@ A mobile-first web app to track your daily CrossFit WOD (Workout Of the Day) and
 - **Smart result logging** — the form adapts to the workout type and pre-fills suggested weights based on your personal maxes (e.g. 80% of your back squat 1RM).
 - **Fitness profile with history** — log dated results for your personal maxes and benchmarks (kg, reps, or time); the most recent one is reused to suggest loads for future WODs, and the full history lets you track progress over time.
 - **AI recommendations for today's WOD** — generate pacing/break/scaling advice and an expected-result estimate for the current WOD, personalized against your fitness profile.
+- **Backfill past days** — navigate to any previous day (up to today) to add a WOD you missed logging and record its result, not just today's.
 - **Shared WOD, personal results** — the WOD is shared across all users for a given day; results and profile data are private per user (enforced with Supabase Row Level Security).
 
 ## Tech stack
@@ -67,7 +68,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 1. **Log in** — enter your email on the login page and click the magic link sent to your inbox.
 2. **Add your fitness profile** (optional but recommended) — go to *Profilo* and log a result for any max/benchmark you know (e.g. back squat, deadlift, Fran time). Each *+ Aggiungi* logs a new dated result rather than overwriting the last one, so *Storico* builds up a history you can use to see whether you're actually improving.
-3. **Upload today's WOD** — on the home page, tap *Carica screenshot* and select one or more photos of the workout board. Claude extracts the structure automatically.
+3. **Upload today's WOD** — on the home page, tap *Carica screenshot* and select one or more photos of the workout board. Claude extracts the structure automatically. Use the ‹ › arrows next to the date to go back to a previous day (e.g. to add a WOD you forgot to log yesterday) — you can't go past today.
 4. **Review / edit** — check the extracted text. Use *Modifica* to correct it, or *Sostituisci WOD* to upload different screenshots.
 5. **Get recommendations** — tap *✨ Consigli e risultato atteso* to have Claude generate pacing/scaling advice and an expected-result estimate for the WOD, based on your fitness profile. It's cached per WOD (so it isn't regenerated on every page load); use *Rigenera* to refresh it, e.g. after editing your profile or the WOD text.
 6. **Log your result** — tap *Registra risultato* and fill in the form for your score (weights/reps for strength, time for a for-time piece, rounds+reps for AMRAP, minutes completed for EMOM). Mark whether you did it RX and add notes if you scaled.
@@ -76,15 +77,15 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ```
 app/
-  page.tsx                 Home page — today's WOD + result CTA
+  page.tsx                 Home page — WOD for the selected day (?date=YYYY-MM-DD, defaults to today) + result CTA
   login/, auth/callback/   Magic-link auth flow
   profile/                 Fitness profile page
-  api/extract-wod/         Sends screenshots to Claude, stores parsed WOD
+  api/extract-wod/         Sends screenshots to Claude, stores parsed WOD for a given date
   api/update-wod/          Saves manual edits to the WOD text
   api/log-result/          Saves a logged result
   api/profile/             Saves fitness profile entries
   api/wod-recommendation/  Generates & caches AI pacing/scaling advice for a WOD
-components/                WodSection, ResultForm, ProfileForm, WodRecommendation, TimeInput, LogoutButton
+components/                WodSection, DateNav, ResultForm, ProfileForm, WodRecommendation, TimeInput, LogoutButton
 lib/                       Supabase clients, shared types, profile presets
 supabase/schema.sql        Database schema + RLS policies
 ```
