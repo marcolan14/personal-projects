@@ -17,6 +17,7 @@ type Props = {
   workout: Workout
   profile: FitnessEntry[]
   existingResult: boolean
+  existingResultComment: string | null
   initialRecommendation: WodRecommendationType | null
   date: string
 }
@@ -27,7 +28,7 @@ type WorkoutState = {
   wodMeta: WodMeta | null
 }
 
-export default function WodSection({ workout, profile, existingResult, initialRecommendation, date }: Props) {
+export default function WodSection({ workout, profile, existingResult, existingResultComment, initialRecommendation, date }: Props) {
   const [wod, setWod] = useState<WorkoutState>({
     id: workout?.id ?? null,
     rawText: workout?.raw_text ?? null,
@@ -39,6 +40,7 @@ export default function WodSection({ workout, profile, existingResult, initialRe
   const [editText, setEditText] = useState('')
   const [saving, setSaving] = useState(false)
   const [resultSaved, setResultSaved] = useState(existingResult)
+  const [resultComment, setResultComment] = useState<string | null>(existingResultComment)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -106,6 +108,7 @@ export default function WodSection({ workout, profile, existingResult, initialRe
       setWod({ id: data.workoutId, rawText: data.rawText, wodMeta: data.wodMeta })
       setReplacing(false)
       setResultSaved(false)
+      setResultComment(null)
       setRecommendation(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto')
@@ -126,7 +129,7 @@ export default function WodSection({ workout, profile, existingResult, initialRe
           workoutId={wod.id}
           meta={wod.wodMeta}
           profile={profile}
-          onSaved={() => { setLogging(false); setResultSaved(true) }}
+          onSaved={(comment) => { setLogging(false); setResultSaved(true); setResultComment(comment) }}
           onCancel={() => setLogging(false)}
         />
       </div>
@@ -196,8 +199,11 @@ export default function WodSection({ workout, profile, existingResult, initialRe
         )}
 
         {resultSaved ? (
-          <div className="bg-green-900/30 border border-green-800 rounded-xl px-4 py-3 text-sm text-green-300">
-            Risultato salvato
+          <div className="bg-green-900/30 border border-green-800 rounded-xl px-4 py-3 space-y-2">
+            <p className="text-sm text-green-300">Risultato salvato</p>
+            {resultComment && (
+              <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">{resultComment}</p>
+            )}
           </div>
         ) : wod.id && hasWorkoutSections(wod.wodMeta) ? (
           <button

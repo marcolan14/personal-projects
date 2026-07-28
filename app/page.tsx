@@ -32,7 +32,13 @@ export default async function Home({
       .eq('user_id', user.id)
       .order('recorded_on', { ascending: false }),
     workout
-      ? supabase.from('results').select('id').eq('user_id', user.id).eq('workout_id', workout.id).limit(1).maybeSingle()
+      ? supabase.from('results')
+          .select('id, comment')
+          .eq('user_id', user.id)
+          .eq('workout_id', workout.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
     workout
       ? supabase.from('wod_recommendations')
@@ -71,6 +77,7 @@ export default async function Home({
           workout={workout}
           profile={profile ?? []}
           existingResult={!!existingResult}
+          existingResultComment={existingResult?.comment ?? null}
           initialRecommendation={recommendation ?? null}
         />
       </div>
