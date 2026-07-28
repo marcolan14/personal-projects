@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { buildResultHistoryText } from '@/lib/result-history'
 import { NextRequest } from 'next/server'
 
 const COMMENT_TOOL: Anthropic.Tool = {
@@ -17,7 +18,7 @@ const COMMENT_TOOL: Anthropic.Tool = {
   },
 }
 
-const COMMENT_PROMPT = (wodText: string, expected: string, resultJson: string) => `WOD:
+const COMMENT_PROMPT = (wodText: string, expected: string, resultJson: string, historyText: string) => `WOD:
 ${wodText}
 
 Risultato atteso (stimato prima di svolgere il WOD, basato sul profilo dell'utente):
@@ -26,7 +27,10 @@ ${expected}
 Risultato effettivo registrato dall'utente (JSON):
 ${resultJson}
 
-Confronta il risultato effettivo con quello atteso e chiama il tool "submit_comment" con un breve commento.`
+Storico dei risultati precedenti dell'utente (più recenti prima), utile per notare tendenze o miglioramenti:
+${historyText}
+
+Confronta il risultato effettivo con quello atteso, ed eventualmente con lo storico, e chiama il tool "submit_comment" con un breve commento.`
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,6 +60,7 @@ export async function POST(request: NextRequest) {
     let comment: string | null = null
     if (recommendation?.expected_result && workout?.raw_text) {
       try {
+        const historyText = await buildResultHistoryText(supabase, user.id)
         const client = new Anthropic()
         const message = await client.messages.create({
           model: 'claude-sonnet-5',
@@ -64,7 +69,7 @@ export async function POST(request: NextRequest) {
           tool_choice: { type: 'tool', name: COMMENT_TOOL.name },
           messages: [{
             role: 'user',
-            content: COMMENT_PROMPT(workout.raw_text, recommendation.expected_result, JSON.stringify(result)),
+            content: COMMENT_PROMPT(workout.raw_text, recommendation.expected_result, JSON.stringify(result), historyText),
           }],
         })
         const toolUse = message.content.find(block => block.type === 'tool_use')

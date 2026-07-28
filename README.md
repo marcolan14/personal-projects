@@ -9,9 +9,9 @@ A mobile-first web app to track your daily CrossFit WOD (Workout Of the Day) and
 - **Edit / replace the WOD** — fix anything the AI got wrong, or swap in a different workout for the day.
 - **Smart result logging** — the form adapts to the workout type and pre-fills suggested weights based on your personal maxes (e.g. 80% of your back squat 1RM).
 - **Fitness profile with history** — log dated results for your personal maxes and benchmarks (kg, reps, or time); the most recent one is reused to suggest loads for future WODs, and the full history lets you track progress over time.
-- **AI recommendations for today's WOD** — generate pacing/break/scaling advice and an expected-result estimate for the current WOD, personalized against your fitness profile.
+- **AI recommendations for today's WOD** — generate pacing/break/scaling advice and an expected-result estimate for the current WOD, personalized against your fitness profile and your recent result history (last 10 logged results).
 - **Backfill past days** — navigate to any previous day (up to today) to add a WOD you missed logging and record its result, not just today's.
-- **Result feedback** — after logging a result, Claude compares it against the WOD's expected-result estimate and adds a short comment on how you did.
+- **Result feedback** — after logging a result, Claude compares it against the WOD's expected-result estimate (and your recent history) and adds a short comment on how you did.
 - **Shared WOD, personal results** — the WOD is shared across all users for a given day; results and profile data are private per user (enforced with Supabase Row Level Security).
 
 ## Tech stack
