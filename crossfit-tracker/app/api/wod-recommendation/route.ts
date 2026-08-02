@@ -1,7 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { buildResultHistoryText } from '@/lib/result-history'
+import { matchPreset } from '@/lib/profile-presets'
+import { WodMeta, flattenMovementNames } from '@/lib/types'
 import { NextRequest } from 'next/server'
+
+const PROFILE_TREND_CAP = 5
 
 const PROMPT_TEMPLATE = (wodText: string, profileText: string, historyText: string) => `Sei un coach di CrossFit esperto. Ecco il WOD di oggi:
 
@@ -50,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     const [{ data: workout }, { data: profileHistory }] = await Promise.all([
-      supabase.from('workouts').select('raw_text').eq('id', workout_id).single(),
+      supabase.from('workouts').select('raw_text, wod_meta').eq('id', workout_id).single(),
       supabase.from('fitness_profile')
         .select('name, value, unit, recorded_on')
         .eq('user_id', user.id)
@@ -61,17 +65,40 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'WOD non trovato' }, { status: 404 })
     }
 
-    const latestByName = new Map<string, { name: string; value: string; unit: string | null }>()
+    const wodMeta = workout.wod_meta as WodMeta | null
+
+    // Benchmarks matching a movement in today's WOD (e.g. "1 Mile Run") get their
+    // full recent history shown, so the AI can spot trends rather than just a single data point.
+    const focusPresetNames = new Set(
+      flattenMovementNames(wodMeta)
+        .map(name => matchPreset(name)?.name)
+        .filter((name): name is string => !!name)
+    )
+
+    const entriesByName = new Map<string, { name: string; value: string; unit: string | null; recorded_on: string }[]>()
     for (const entry of profileHistory ?? []) {
-      if (!latestByName.has(entry.name)) latestByName.set(entry.name, entry)
+      const list = entriesByName.get(entry.name) ?? []
+      list.push(entry)
+      entriesByName.set(entry.name, list)
     }
-    const profile = Array.from(latestByName.values())
 
-    const profileText = profile.length
-      ? profile.map(p => `- ${p.name}: ${p.value}${p.unit ? ' ' + p.unit : ''}`).join('\n')
-      : 'Nessun dato disponibile.'
+    const profileLines: string[] = []
+    for (const [name, entries] of entriesByName) {
+      if (focusPresetNames.has(name) && entries.length > 1) {
+        const trend = entries
+          .slice(0, PROFILE_TREND_CAP)
+          .map(e => `${e.recorded_on}: ${e.value}${e.unit ? ' ' + e.unit : ''}`)
+          .join(', ')
+        profileLines.push(`- ${name} (storico recente): ${trend}`)
+      } else {
+        const latest = entries[0]
+        profileLines.push(`- ${latest.name}: ${latest.value}${latest.unit ? ' ' + latest.unit : ''}`)
+      }
+    }
 
-    const historyText = await buildResultHistoryText(supabase, user.id)
+    const profileText = profileLines.length ? profileLines.join('\n') : 'Nessun dato disponibile.'
+
+    const historyText = await buildResultHistoryText(supabase, user.id, wodMeta)
 
     const client = new Anthropic()
 

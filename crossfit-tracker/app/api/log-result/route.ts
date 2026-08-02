@@ -1,7 +1,34 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { buildResultHistoryText } from '@/lib/result-history'
+import { matchPreset } from '@/lib/profile-presets'
+import { WodMeta } from '@/lib/types'
 import { NextRequest } from 'next/server'
+
+const LOGGABLE = new Set(['strength', 'for_time', 'amrap', 'emom'])
+
+// A single-movement "for time" section (e.g. a 1 mile run, a row test) that matches
+// a known preset name doubles as a benchmark, so logging it also updates fitness_profile.
+function extractBenchmark(result: unknown[], wodMeta: WodMeta | null) {
+  if (!wodMeta) return null
+
+  const loggableSections = wodMeta.sections.filter(s => LOGGABLE.has(s.type))
+
+  for (const entry of result as Array<{ type: string; label?: string; time?: string }>) {
+    if (entry.type !== 'for_time' || !entry.time) continue
+
+    const section = loggableSections.length === result.length
+      ? loggableSections[result.indexOf(entry)]
+      : loggableSections.find(s => s.type === entry.type && s.label === entry.label)
+
+    if (!section || section.movements.length !== 1) continue
+
+    const preset = matchPreset(section.movements[0].name)
+    if (preset) return { name: preset.name, value: entry.time, unit: preset.unit }
+  }
+
+  return null
+}
 
 const COMMENT_TOOL: Anthropic.Tool = {
   name: 'submit_comment',
@@ -48,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     const [{ data: workout }, { data: recommendation }] = await Promise.all([
-      supabase.from('workouts').select('raw_text').eq('id', workout_id).single(),
+      supabase.from('workouts').select('raw_text, wod_meta, date').eq('id', workout_id).single(),
       supabase.from('wod_recommendations')
         .select('expected_result')
         .eq('user_id', user.id)
@@ -56,11 +83,13 @@ export async function POST(request: NextRequest) {
         .maybeSingle(),
     ])
 
+    const wodMeta = (workout?.wod_meta as WodMeta | null) ?? null
+
     // Only worth commenting when there's an expected result to compare against.
     let comment: string | null = null
     if (recommendation?.expected_result && workout?.raw_text) {
       try {
-        const historyText = await buildResultHistoryText(supabase, user.id)
+        const historyText = await buildResultHistoryText(supabase, user.id, wodMeta)
         const client = new Anthropic()
         const message = await client.messages.create({
           model: 'claude-sonnet-5',
@@ -93,7 +122,18 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: error.message }, { status: 500 })
     }
 
-    return Response.json({ ok: true, comment })
+    let benchmark: { name: string; value: string; unit: string | null } | null = null
+    const detected = extractBenchmark(result, wodMeta)
+    if (detected && workout?.date) {
+      const { error: benchmarkError } = await supabase.from('fitness_profile').upsert(
+        { user_id: user.id, name: detected.name, value: detected.value, unit: detected.unit, recorded_on: workout.date },
+        { onConflict: 'user_id,name,recorded_on' }
+      )
+      if (!benchmarkError) benchmark = detected
+      else console.error('[log-result] benchmark upsert failed:', benchmarkError)
+    }
+
+    return Response.json({ ok: true, comment, benchmark })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Errore interno del server'
     console.error('[log-result]', err)

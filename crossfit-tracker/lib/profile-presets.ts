@@ -9,6 +9,20 @@ export type PresetCategory = {
   items: PresetItem[]
 }
 
+export function matchPreset(movementName: string): PresetItem | null {
+  const target = movementName.trim().toLowerCase()
+  if (!target) return null
+  for (const category of PRESET_PROFILE) {
+    for (const item of category.items) {
+      const preset = item.name.toLowerCase()
+      if (target === preset || target.includes(preset) || preset.includes(target)) {
+        return item
+      }
+    }
+  }
+  return null
+}
+
 export const PRESET_PROFILE: PresetCategory[] = [
   {
     category: 'Lifts',

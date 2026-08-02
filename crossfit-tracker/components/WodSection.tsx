@@ -41,6 +41,7 @@ export default function WodSection({ workout, profile, existingResult, existingR
   const [saving, setSaving] = useState(false)
   const [resultSaved, setResultSaved] = useState(existingResult)
   const [resultComment, setResultComment] = useState<string | null>(existingResultComment)
+  const [savedBenchmark, setSavedBenchmark] = useState<{ name: string; value: string; unit: string | null } | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -129,7 +130,7 @@ export default function WodSection({ workout, profile, existingResult, existingR
           workoutId={wod.id}
           meta={wod.wodMeta}
           profile={profile}
-          onSaved={(comment) => { setLogging(false); setResultSaved(true); setResultComment(comment) }}
+          onSaved={(comment, benchmark) => { setLogging(false); setResultSaved(true); setResultComment(comment); setSavedBenchmark(benchmark) }}
           onCancel={() => setLogging(false)}
         />
       </div>
@@ -203,6 +204,12 @@ export default function WodSection({ workout, profile, existingResult, existingR
             <p className="text-sm text-green-300">Risultato salvato</p>
             {resultComment && (
               <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">{resultComment}</p>
+            )}
+            {savedBenchmark && (
+              <p className="text-xs text-green-400">
+                Aggiornato anche il tuo profilo: {savedBenchmark.name} — {savedBenchmark.value}
+                {savedBenchmark.unit && savedBenchmark.unit !== 'mm:ss' ? ` ${savedBenchmark.unit}` : ''}
+              </p>
             )}
           </div>
         ) : wod.id && hasWorkoutSections(wod.wodMeta) ? (

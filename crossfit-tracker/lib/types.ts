@@ -20,6 +20,11 @@ export type WodMeta = {
   sections: WodSection[]
 }
 
+export function flattenMovementNames(meta: WodMeta | null | undefined): string[] {
+  if (!meta) return []
+  return meta.sections.flatMap(s => s.movements.map(m => m.name.toLowerCase().trim())).filter(Boolean)
+}
+
 export type FitnessEntry = {
   name: string
   value: string

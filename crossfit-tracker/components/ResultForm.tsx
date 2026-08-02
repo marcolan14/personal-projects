@@ -18,11 +18,13 @@ type SectionState = {
   notes: string
 }
 
+type Benchmark = { name: string; value: string; unit: string | null }
+
 type Props = {
   workoutId: string
   meta: WodMeta
   profile: FitnessEntry[]
-  onSaved: (comment: string | null) => void
+  onSaved: (comment: string | null, benchmark: Benchmark | null) => void
   onCancel: () => void
 }
 
@@ -149,7 +151,7 @@ export default function ResultForm({ workoutId, meta, profile, onSaved, onCancel
         throw new Error(data.error ?? `Errore ${res.status}`)
       }
       const data = await res.json()
-      onSaved(data.comment ?? null)
+      onSaved(data.comment ?? null, data.benchmark ?? null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto')
     } finally {
