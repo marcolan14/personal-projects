@@ -1,0 +1,7 @@
+# This year's planned investment (EXAMPLE — placeholder data)
+# Real version lives at ~/investments-data/contribution.yaml (never in git).
+
+contribution:
+  amount: 10000
+  currency: EUR
+  planned_date: "2027-01-20"

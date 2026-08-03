@@ -1,0 +1,26 @@
+# Current holdings (EXAMPLE — fake placeholder data, not real instruments)
+# Real version lives at ~/investments-data/portfolio.yaml (never in git).
+
+as_of: "2026-01-01"
+
+holdings:
+  - name: "Example World Equity ETF Acc"
+    isin: XX0000000001        # placeholder, not a real ISIN
+    quantity: 100
+    currency: EUR
+    asset_class: stocks
+    value_snapshot: 10000.00
+
+  - name: "Example Government Bond ETF"
+    isin: XX0000000002        # placeholder, not a real ISIN
+    quantity: 100
+    currency: EUR
+    asset_class: bonds
+    value_snapshot: 5000.00
+
+  - name: "Bitcoin"
+    isin: null
+    quantity: 0.01
+    currency: USD
+    asset_class: alternative_assets
+    value_snapshot: 500.00

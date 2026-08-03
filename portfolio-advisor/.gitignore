@@ -1,0 +1,17 @@
+# Real sensitive data must NEVER live in this repo.
+# It lives in ~/investments-data/ outside the repo entirely.
+# These patterns are defense-in-depth only, in case that ever changes.
+portfolio.yaml
+contribution.yaml
+ips.yaml
+*.enc
+*.gpg
+*.age
+data/
+history/
+cache/
+.env
+.DS_Store
+.venv/
+__pycache__/
+*.pyc

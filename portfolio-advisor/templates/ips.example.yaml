@@ -1,0 +1,26 @@
+# Investment Policy Statement (EXAMPLE — placeholder numbers)
+# Real version lives at ~/investments-data/ips.yaml (never in git).
+#
+# This is the reference point every drift/recommendation is measured against.
+# Revise rarely and deliberately, not in reaction to a single report.
+
+risk_tolerance:
+  # your own definition of "severe loss" you're managing against
+  max_1yr_var_95: 0.20        # target: 95% historical VaR should not exceed -20% in a year
+
+rebalancing:
+  band_pp: 3                  # a recommendation triggers once drift exceeds +/- this many percentage points
+
+target_allocation:
+  asset_class:
+    equities: 70
+    bonds: 25
+    cash: 5
+  region:
+    north_america: 45
+    europe: 25
+    japan: 7
+    other_developed_asia: 5
+    emerging_markets: 15
+    other: 3
+  # sector/currency breakdowns can be added later once the basic pipeline works
