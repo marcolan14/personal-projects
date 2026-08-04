@@ -529,7 +529,7 @@ function initSection(section: WodSection, profile: FitnessEntry[]): SectionState
 
   if (section.type === 'strength') {
     base.movementSets = section.movements.map(m => {
-      const n = m.sets ?? 3
+      const n = section.rounds ?? m.sets ?? 3
       const suggested = m.weight_percent
         ? suggestWeight(m.name, m.weight_percent, profile)
         : m.weight_rx_kg?.toString() ?? ''

@@ -18,14 +18,14 @@ const STRUCTURE_TOOL: Anthropic.Tool = {
             label: { type: 'string', description: 'Nome sezione opzionale (es. Strength, Metcon, Part A).' },
             type: { type: 'string', description: "strength, for_time, amrap oppure emom. Usa 'strength' anche per schemi a intervallo fisso tipo 'ogni 1:30 per 7 round: 3 hang power clean (carico crescente)' — è lavoro di forza a set fissi, non un vero EMOM condizionamento. Usa 'emom' SOLO per formati cardio/conditioning a intervallo dove si registra il tempo o il completamento (es. 'EMOM 12: min pari 200m run, min dispari 15 burpee'), non per set di forza scanditi da un intervallo." },
             duration_min: { type: 'number', description: 'Durata in minuti (solo per amrap/emom, durata di ogni round se ce ne sono più di uno).' },
-            rounds: { type: 'number', description: 'Numero di round/set fissi dichiarati nel WOD (es. "5 SETS (2:00 AMRAP)" → 5). Ometti se non è indicato un numero fisso di round.' },
+            rounds: { type: 'number', description: 'Numero di round/set fissi dichiarati per l\'INTERA sezione (es. "5 SETS (2:00 AMRAP)" → 5, oppure "ogni 1:30 per 7 round" → 7). Usa SEMPRE questo campo (non "sets" sui movimenti) quando il numero di round è dichiarato a livello di sezione/intervallo. Ometti se non indicato.' },
             movements: {
               type: 'array',
               items: {
                 type: 'object',
                 properties: {
                   name: { type: 'string' },
-                  sets: { type: 'number', description: 'Per strength: numero di round/intervalli, es. "ogni 1:30 per 7 round" → 7, anche se il carico varia round dopo round.' },
+                  sets: { type: 'number', description: 'Numero di set — SOLO per un tradizionale schema di forza dichiarato sul singolo movimento (es. "5x5 back squat" → 5). Non usarlo se il numero di round è già in "rounds" a livello di sezione.' },
                   reps: { type: 'string', description: 'Es. "5" oppure "21-15-9".' },
                   weight_rx_kg: { type: 'number', description: 'Peso RX in kg.' },
                   weight_percent: { type: 'number', description: 'Es. 80 per 80% del massimale.' },
