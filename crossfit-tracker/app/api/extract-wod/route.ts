@@ -16,13 +16,13 @@ const PROMPT = `Analizza queste immagini del WOD CrossFit. Restituisci SOLO un o
     "sections": [
       {
         "label": "nome sezione opzionale (es. Strength, Metcon, Part A)",
-        "type": "strength oppure for_time oppure amrap oppure emom",
+        "type": "strength oppure for_time oppure amrap oppure emom. Usa 'strength' anche per schemi a intervallo fisso tipo 'ogni 1:30 per 7 round: 3 hang power clean (carico crescente)' — è comunque un lavoro di forza a set fissi, non un vero EMOM condizionamento. Usa 'emom' SOLO per formati cardio/conditioning a intervallo dove si registra il tempo o il completamento (es. 'EMOM 12: min pari 200m run, min dispari 15 burpee'), non per set di forza scanditi da un intervallo.",
         "duration_min": numero (solo per amrap/emom, durata di ogni round se ce ne sono più di uno),
         "rounds": numero di round/set fissi dichiarati nel WOD (es. "5 SETS (2:00 AMRAP)" → 5), ometti se non è indicato un numero fisso di round,
         "movements": [
           {
             "name": "nome del movimento",
-            "sets": numero (solo per strength),
+            "sets": numero (per strength: numero di round/intervalli, es. "ogni 1:30 per 7 round" → 7, anche se il carico varia round dopo round),
             "reps": "5" oppure "21-15-9",
             "weight_rx_kg": numero in kg,
             "weight_percent": numero (es. 80 per 80% del massimale),
