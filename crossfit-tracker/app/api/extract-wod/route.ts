@@ -17,7 +17,8 @@ const PROMPT = `Analizza queste immagini del WOD CrossFit. Restituisci SOLO un o
       {
         "label": "nome sezione opzionale (es. Strength, Metcon, Part A)",
         "type": "strength oppure for_time oppure amrap oppure emom",
-        "duration_min": numero (solo per amrap/emom),
+        "duration_min": numero (solo per amrap/emom, durata di ogni round se ce ne sono più di uno),
+        "rounds": numero di round/set fissi dichiarati nel WOD (es. "5 SETS (2:00 AMRAP)" → 5), ometti se non è indicato un numero fisso di round,
         "movements": [
           {
             "name": "nome del movimento",
@@ -27,7 +28,8 @@ const PROMPT = `Analizza queste immagini del WOD CrossFit. Restituisci SOLO un o
             "weight_percent": numero (es. 80 per 80% del massimale),
             "height_cm": numero (per box jump),
             "distance_m": numero,
-            "calories": numero
+            "calories": numero,
+            "max_reps": true se il movimento è "Max reps"/"AMRAP" nel tempo rimanente del round (es. "Max Push Ups in the remaining time"), altrimenti ometti il campo
           }
         ]
       }

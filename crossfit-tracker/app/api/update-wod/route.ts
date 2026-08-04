@@ -17,7 +17,8 @@ const STRUCTURE_TOOL: Anthropic.Tool = {
           properties: {
             label: { type: 'string', description: 'Nome sezione opzionale (es. Strength, Metcon, Part A).' },
             type: { type: 'string', description: 'strength, for_time, amrap oppure emom.' },
-            duration_min: { type: 'number', description: 'Durata in minuti (solo per amrap/emom).' },
+            duration_min: { type: 'number', description: 'Durata in minuti (solo per amrap/emom, durata di ogni round se ce ne sono più di uno).' },
+            rounds: { type: 'number', description: 'Numero di round/set fissi dichiarati nel WOD (es. "5 SETS (2:00 AMRAP)" → 5). Ometti se non è indicato un numero fisso di round.' },
             movements: {
               type: 'array',
               items: {
@@ -31,6 +32,7 @@ const STRUCTURE_TOOL: Anthropic.Tool = {
                   height_cm: { type: 'number', description: 'Per box jump.' },
                   distance_m: { type: 'number' },
                   calories: { type: 'number' },
+                  max_reps: { type: 'boolean', description: 'true se il movimento è "Max reps"/"AMRAP" nel tempo rimanente del round (es. "Max Push Ups in the remaining time").' },
                 },
                 required: ['name'],
               },

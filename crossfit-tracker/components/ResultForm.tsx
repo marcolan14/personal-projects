@@ -13,6 +13,7 @@ type SectionState = {
   movementWeights: string[] // per-movement weights for for_time sections
   rounds: string
   extraReps: string
+  roundReps: string[]
   minutesDone: string
   rx: boolean
   notes: string
@@ -85,6 +86,13 @@ export default function ResultForm({ workoutId, meta, profile, onSaved, onCancel
     }))
   }
 
+  function updateRoundReps(si: number, ri: number, value: string) {
+    setSectionState(prev => prev.map((s, i) => {
+      if (i !== si) return s
+      return { ...s, roundReps: s.roundReps.map((r, j) => j === ri ? value : r) }
+    }))
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
@@ -123,6 +131,16 @@ export default function ResultForm({ workoutId, meta, profile, onSaved, onCancel
         }
       }
       if (state.type === 'amrap') {
+        if (sec.rounds && sec.rounds > 1) {
+          const roundReps = state.roundReps.map(r => parseInt(r) || 0)
+          return {
+            type: 'amrap', label: sec.label,
+            fixed_rounds: sec.rounds,
+            round_reps: roundReps,
+            total_reps: roundReps.reduce((a, b) => a + b, 0),
+            rx: state.rx, notes: state.notes,
+          }
+        }
         return {
           type: 'amrap', label: sec.label,
           rounds: parseInt(state.rounds) || 0,
@@ -235,9 +253,13 @@ export default function ResultForm({ workoutId, meta, profile, onSaved, onCancel
             {state.type === 'amrap' && (
               <AmrapSection
                 durationMin={sec.duration_min}
+                fixedRounds={sec.rounds}
+                maxRepsLabel={sec.movements.find(m => m.max_reps)?.name}
                 rounds={state.rounds}
                 extraReps={state.extraReps}
+                roundReps={state.roundReps}
                 onChange={(field, val) => updateSection(realIdx, { [field]: val })}
+                onChangeRoundReps={(ri, val) => updateRoundReps(realIdx, ri, val)}
               />
             )}
 
@@ -402,13 +424,43 @@ function ForTimeSection({
 }
 
 function AmrapSection({
-  durationMin, rounds, extraReps, onChange,
+  durationMin, fixedRounds, maxRepsLabel, rounds, extraReps, roundReps, onChange, onChangeRoundReps,
 }: {
   durationMin?: number
+  fixedRounds?: number
+  maxRepsLabel?: string
   rounds: string
   extraReps: string
+  roundReps: string[]
   onChange: (field: string, val: string) => void
+  onChangeRoundReps: (ri: number, val: string) => void
 }) {
+  // Fixed round count (e.g. "5 SETS (2:00 AMRAP)") — rounds are known in advance,
+  // so only the variable max-reps movement needs to be logged, one input per round.
+  if (fixedRounds && fixedRounds > 1) {
+    const total = roundReps.reduce((sum, r) => sum + (parseInt(r) || 0), 0)
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-gray-400">
+          {fixedRounds} round{durationMin ? ` × ${durationMin} min AMRAP` : ''} — {maxRepsLabel ?? 'reps'} per round
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {roundReps.map((val, ri) => (
+            <div key={ri} className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500 w-5 shrink-0">R{ri + 1}</span>
+              <input type="number" inputMode="numeric" value={val}
+                onChange={e => onChangeRoundReps(ri, e.target.value)}
+                placeholder="reps" min={0}
+                className="w-full bg-gray-700 text-sm text-white placeholder-gray-500 px-2 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-center"
+              />
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500">Totale: {total}</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-2">
       <p className="text-sm text-gray-400">
@@ -465,9 +517,14 @@ function initSection(section: WodSection, profile: FitnessEntry[]): SectionState
     movementWeights: section.movements.map(m => m.weight_rx_kg?.toString() ?? ''),
     rounds: '',
     extraReps: '',
+    roundReps: [],
     minutesDone: '',
     rx: true,
     notes: '',
+  }
+
+  if (section.type === 'amrap' && section.rounds && section.rounds > 1) {
+    base.roundReps = Array(section.rounds).fill('')
   }
 
   if (section.type === 'strength') {

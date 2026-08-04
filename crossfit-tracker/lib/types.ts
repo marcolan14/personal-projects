@@ -7,12 +7,14 @@ export type Movement = {
   height_cm?: number
   distance_m?: number
   calories?: number
+  max_reps?: boolean
 }
 
 export type WodSection = {
   label?: string
   type: 'strength' | 'for_time' | 'amrap' | 'emom' | string
   duration_min?: number
+  rounds?: number
   movements: Movement[]
 }
 
