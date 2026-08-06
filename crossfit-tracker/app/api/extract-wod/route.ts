@@ -9,34 +9,52 @@ type ImageInput = {
   mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'
 }
 
-const PROMPT = `Analizza queste immagini del WOD CrossFit. Restituisci SOLO un oggetto JSON valido (niente markdown, niente backtick, niente testo prima o dopo):
-{
-  "raw_text": "testo completo del WOD formattato e leggibile",
-  "meta": {
-    "sections": [
-      {
-        "label": "nome sezione opzionale (es. Strength, Metcon, Part A)",
-        "type": "strength oppure for_time oppure amrap oppure emom. Usa 'strength' anche per schemi a intervallo fisso tipo 'ogni 1:30 per 7 round: 3 hang power clean (carico crescente)' — è comunque un lavoro di forza a set fissi, non un vero EMOM condizionamento. Usa 'emom' SOLO per formati cardio/conditioning a intervallo dove si registra il tempo o il completamento (es. 'EMOM 12: min pari 200m run, min dispari 15 burpee'), non per set di forza scanditi da un intervallo.",
-        "duration_min": numero (solo per amrap/emom, durata di ogni round se ce ne sono più di uno),
-        "rounds": numero di round/set fissi dichiarati per l'INTERA sezione nel WOD (es. "5 SETS (2:00 AMRAP)" → 5, oppure "ogni 1:30 per 7 round" → 7). Usa SEMPRE questo campo (non "sets" sui movimenti) quando il numero di round è dichiarato a livello di sezione/intervallo. Ometti se non indicato,
-        "movements": [
-          {
-            "name": "nome del movimento",
-            "sets": numero di set — SOLO per un tradizionale schema di forza dichiarato sul singolo movimento (es. "5x5 back squat" → 5). Non usarlo se il numero di round è già in "rounds" a livello di sezione,
-            "reps": "5" oppure "21-15-9",
-            "weight_rx_kg": numero in kg,
-            "weight_percent": numero (es. 80 per 80% del massimale),
-            "height_cm": numero (per box jump),
-            "distance_m": numero,
-            "calories": numero,
-            "max_reps": true se il movimento è "Max reps"/"AMRAP" nel tempo rimanente del round (es. "Max Push Ups in the remaining time"), altrimenti ometti il campo
-          }
-        ]
-      }
-    ]
-  }
+const EXTRACT_TOOL: Anthropic.Tool = {
+  name: 'submit_wod',
+  description: 'Registra il testo formattato del WOD e la sua struttura.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      raw_text: { type: 'string', description: 'Testo completo del WOD formattato e leggibile.' },
+      sections: {
+        type: 'array',
+        description: 'Le sezioni del WOD (es. strength, metcon).',
+        items: {
+          type: 'object',
+          properties: {
+            label: { type: 'string', description: 'Nome sezione opzionale (es. Strength, Metcon, Part A).' },
+            type: { type: 'string', description: "strength, for_time, amrap oppure emom. Usa 'strength' anche per schemi a intervallo fisso tipo 'ogni 1:30 per 7 round: 3 hang power clean (carico crescente)' — è comunque un lavoro di forza a set fissi, non un vero EMOM condizionamento. Usa 'emom' SOLO per formati cardio/conditioning a intervallo dove si registra il tempo o il completamento (es. 'EMOM 12: min pari 200m run, min dispari 15 burpee'), non per set di forza scanditi da un intervallo." },
+            duration_min: { type: 'number', description: 'Durata in minuti (solo per amrap/emom, durata di ogni round se ce ne sono più di uno).' },
+            rounds: { type: 'number', description: 'Numero di round/set fissi dichiarati per l\'INTERA sezione nel WOD (es. "5 SETS (2:00 AMRAP)" → 5, oppure "ogni 1:30 per 7 round" → 7). Usa SEMPRE questo campo (non "sets" sui movimenti) quando il numero di round è dichiarato a livello di sezione/intervallo. Ometti se non indicato.' },
+            movements: {
+              type: 'array',
+              description: 'I movimenti della sezione. Usa un array vuoto se la sezione non ne elenca nessuno.',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  sets: { type: 'number', description: 'Numero di set — SOLO per un tradizionale schema di forza dichiarato sul singolo movimento (es. "5x5 back squat" → 5). Non usarlo se il numero di round è già in "rounds" a livello di sezione.' },
+                  reps: { type: 'string', description: 'Es. "5" oppure "21-15-9".' },
+                  weight_rx_kg: { type: 'number', description: 'Peso RX in kg.' },
+                  weight_percent: { type: 'number', description: 'Es. 80 per 80% del massimale.' },
+                  height_cm: { type: 'number', description: 'Per box jump.' },
+                  distance_m: { type: 'number' },
+                  calories: { type: 'number' },
+                  max_reps: { type: 'boolean', description: 'true se il movimento è "Max reps"/"AMRAP" nel tempo rimanente del round (es. "Max Push Ups in the remaining time").' },
+                },
+                required: ['name'],
+              },
+            },
+          },
+          required: ['type', 'movements'],
+        },
+      },
+    },
+    required: ['raw_text', 'sections'],
+  },
 }
-Includi solo i campi presenti nel WOD. Converti sempre i pesi in kg. Per WOD con più parti usa più elementi in sections.`
+
+const PROMPT = `Analizza queste immagini del WOD CrossFit e registra il testo e la struttura chiamando il tool "submit_wod". Converti sempre i pesi in kg. Includi solo i campi presenti nel WOD. Se il WOD ha più parti usa più elementi in sections.`
 
 const isoDateRe = /^\d{4}-\d{2}-\d{2}$/
 
@@ -65,28 +83,21 @@ export async function POST(request: NextRequest) {
     const message = await client.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 2048,
+      tools: [EXTRACT_TOOL],
+      tool_choice: { type: 'tool', name: EXTRACT_TOOL.name },
       messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: PROMPT }] }],
     })
 
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
+    const toolUse = message.content.find(block => block.type === 'tool_use')
+    const input = toolUse?.input as { raw_text?: string; sections?: WodMeta['sections'] } | undefined
 
-    let rawText: string
-    let wodMeta: WodMeta | null
-
-    // Claude may wrap JSON in markdown code fences despite instructions
-    const cleaned = responseText
-      .replace(/^```(?:json)?\s*/i, '')
-      .replace(/\s*```\s*$/i, '')
-      .trim()
-
-    try {
-      const parsed = JSON.parse(cleaned)
-      rawText = parsed.raw_text ?? responseText
-      wodMeta = parsed.meta ?? null
-    } catch {
-      rawText = responseText
-      wodMeta = null
+    if (!input?.raw_text || !input?.sections) {
+      console.error('[extract-wod] unexpected response:', message.content)
+      return Response.json({ error: 'Errore nel parsing della risposta AI' }, { status: 500 })
     }
+
+    const rawText = input.raw_text
+    const wodMeta: WodMeta = { sections: input.sections }
 
     const today = todayISO()
     const targetDate = date && isoDateRe.test(date) && date <= today ? date : today
