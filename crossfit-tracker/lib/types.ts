@@ -42,3 +42,5 @@ export type WodRecommendation = {
   recommendations: string
   expected_result: string
 }
+
+export type PredictionRating = 'too_easy' | 'accurate' | 'too_hard'

@@ -6,6 +6,7 @@ import { WodMeta } from '@/lib/types'
 import { NextRequest } from 'next/server'
 
 const LOGGABLE = new Set(['strength', 'for_time', 'amrap', 'emom'])
+const PREDICTION_RATINGS = new Set(['too_easy', 'accurate', 'too_hard'])
 
 // A single-movement "for time" section (e.g. a 1 mile run, a row test) that matches
 // a known preset name doubles as a benchmark, so logging it also updates fitness_profile.
@@ -61,7 +62,7 @@ Confronta il risultato effettivo con quello atteso, ed eventualmente con lo stor
 
 export async function POST(request: NextRequest) {
   try {
-    const { workout_id, result, rx, notes } = await request.json()
+    const { workout_id, result, rx, notes, prediction_rating, prediction_feedback } = await request.json()
 
     if (!workout_id || !result) {
       return Response.json({ error: 'Dati mancanti' }, { status: 400 })
@@ -116,6 +117,8 @@ export async function POST(request: NextRequest) {
       rx: rx ?? true,
       notes: notes ?? null,
       comment,
+      prediction_rating: PREDICTION_RATINGS.has(prediction_rating) ? prediction_rating : null,
+      prediction_feedback: prediction_feedback ?? null,
     })
 
     if (error) {

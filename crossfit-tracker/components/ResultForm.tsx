@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { WodMeta, WodSection, FitnessEntry } from '@/lib/types'
+import { WodMeta, WodSection, FitnessEntry, PredictionRating } from '@/lib/types'
 import TimeInput from './TimeInput'
 
 type SetRow = { weight: string; reps: string }
@@ -25,13 +25,20 @@ type Props = {
   workoutId: string
   meta: WodMeta
   profile: FitnessEntry[]
+  hasRecommendation: boolean
   onSaved: (comment: string | null, benchmark: Benchmark | null) => void
   onCancel: () => void
 }
 
 const LOGGABLE = new Set(['strength', 'for_time', 'amrap', 'emom'])
 
-export default function ResultForm({ workoutId, meta, profile, onSaved, onCancel }: Props) {
+const PREDICTION_RATINGS: { value: PredictionRating; label: string }[] = [
+  { value: 'too_easy', label: 'Troppo facile' },
+  { value: 'accurate', label: 'Giusto' },
+  { value: 'too_hard', label: 'Troppo difficile' },
+]
+
+export default function ResultForm({ workoutId, meta, profile, hasRecommendation, onSaved, onCancel }: Props) {
   const workoutSections = meta.sections.filter(s => LOGGABLE.has(s.type))
 
   // If all sections share the same type, treat them as difficulty levels
@@ -46,6 +53,8 @@ export default function ResultForm({ workoutId, meta, profile, onSaved, onCancel
   const [sectionState, setSectionState] = useState<SectionState[]>(sections)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [predictionRating, setPredictionRating] = useState<PredictionRating | null>(null)
+  const [predictionFeedback, setPredictionFeedback] = useState('')
 
   // sections to actually render in the form
   const activeSections = isMultiLevel
@@ -162,7 +171,13 @@ export default function ResultForm({ workoutId, meta, profile, onSaved, onCancel
       const res = await fetch('/api/log-result', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workout_id: workoutId, result: serialized, rx: overallRx }),
+        body: JSON.stringify({
+          workout_id: workoutId,
+          result: serialized,
+          rx: overallRx,
+          prediction_rating: predictionRating,
+          prediction_feedback: predictionFeedback.trim() || null,
+        }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -292,6 +307,37 @@ export default function ResultForm({ workoutId, meta, profile, onSaved, onCancel
           </div>
         )
       })}
+
+      {hasRecommendation && (
+        <div className="bg-gray-800 rounded-xl p-4 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-orange-400">
+            Com'era la previsione?
+          </p>
+          <div className="flex gap-2">
+            {PREDICTION_RATINGS.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setPredictionRating(prev => prev === value ? null : value)}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                  predictionRating === value
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={predictionFeedback}
+            onChange={e => setPredictionFeedback(e.target.value)}
+            placeholder="Dettagli (opzionale): cosa era impreciso e perché…"
+            className="w-full bg-gray-700 text-sm text-white placeholder-gray-500 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
+          />
+        </div>
+      )}
 
       {error && <p className="text-red-400 text-xs">{error}</p>}
 

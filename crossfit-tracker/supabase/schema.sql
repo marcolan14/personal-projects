@@ -30,6 +30,8 @@ create table results (
   rx boolean not null default true,
   notes text,
   comment text,
+  prediction_rating text check (prediction_rating in ('too_easy', 'accurate', 'too_hard')),
+  prediction_feedback text,
   created_at timestamptz not null default now()
 );
 

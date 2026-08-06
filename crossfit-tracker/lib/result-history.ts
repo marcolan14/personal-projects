@@ -7,6 +7,12 @@ const HISTORY_POOL = 40
 const HISTORY_LIMIT = 10
 const RELEVANT_CAP = 6
 
+const PREDICTION_RATING_LABELS: Record<string, string> = {
+  too_easy: 'previsione troppo facile/lenta rispetto al reale',
+  accurate: 'previsione accurata',
+  too_hard: 'previsione troppo difficile/ambiziosa rispetto al reale',
+}
+
 function namesOverlap(a: string[], b: string[]): boolean {
   return a.some(x => b.some(y => x === y || x.includes(y) || y.includes(x)))
 }
@@ -18,7 +24,7 @@ export async function buildResultHistoryText(
 ): Promise<string> {
   const { data } = await supabase
     .from('results')
-    .select('result, rx, notes, comment, created_at, workouts(date, raw_text, wod_meta)')
+    .select('result, rx, notes, comment, prediction_rating, prediction_feedback, created_at, workouts(date, raw_text, wod_meta)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(HISTORY_POOL)
@@ -56,6 +62,11 @@ export async function buildResultHistoryText(
       ]
       if (r.notes) lines.push(`  Note: ${r.notes}`)
       if (r.comment) lines.push(`  Valutazione precedente: ${r.comment}`)
+      if (r.prediction_rating) {
+        const ratingLabel = PREDICTION_RATING_LABELS[r.prediction_rating] ?? r.prediction_rating
+        const detail = r.prediction_feedback ? ` — ${r.prediction_feedback}` : ''
+        lines.push(`  Feedback utente sulla previsione: ${ratingLabel}${detail}`)
+      }
       return lines.join('\n')
     })
     .join('\n')

@@ -130,6 +130,7 @@ export default function WodSection({ workout, profile, existingResult, existingR
           workoutId={wod.id}
           meta={wod.wodMeta}
           profile={profile}
+          hasRecommendation={!!recommendation}
           onSaved={(comment, benchmark) => { setLogging(false); setResultSaved(true); setResultComment(comment); setSavedBenchmark(benchmark) }}
           onCancel={() => setLogging(false)}
         />
