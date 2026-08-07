@@ -16,7 +16,7 @@ const STRUCTURE_TOOL: Anthropic.Tool = {
           type: 'object',
           properties: {
             label: { type: 'string', description: 'Nome sezione opzionale (es. Strength, Metcon, Part A).' },
-            type: { type: 'string', description: "strength, for_time, amrap oppure emom. Usa 'strength' anche per schemi a intervallo fisso tipo 'ogni 1:30 per 7 round: 3 hang power clean (carico crescente)' — è lavoro di forza a set fissi, non un vero EMOM condizionamento. Usa 'emom' SOLO per formati cardio/conditioning a intervallo dove si registra il tempo o il completamento (es. 'EMOM 12: min pari 200m run, min dispari 15 burpee'), non per set di forza scanditi da un intervallo." },
+            type: { type: 'string', description: "strength, for_time, amrap oppure emom. Usa 'strength' anche per schemi a intervallo fisso tipo 'ogni 1:30 per 7 round: 3 hang power clean (carico crescente)' — è lavoro di forza a set fissi, non un vero EMOM condizionamento. Usa 'emom' SOLO per formati cardio/conditioning a intervallo dove si registra il tempo o il completamento (es. 'EMOM 12: min pari 200m run, min dispari 15 burpee'), non per set di forza scanditi da un intervallo. Usa 'amrap' anche per un test a reps massime di UN SOLO movimento senza round (es. 'Max Power Cleans in 5 minuti', 'AMRAP 3 min: max reps power clean @ 60kg') — in questo caso metti il movimento in movements con max_reps=true e NON impostare 'rounds'; NON usare 'for_time' per questi test, perché il risultato è un numero di reps, non un tempo." },
             duration_min: { type: 'number', description: 'Durata in minuti (solo per amrap/emom, durata di ogni round se ce ne sono più di uno).' },
             rounds: { type: 'number', description: 'Numero di round/set fissi dichiarati per l\'INTERA sezione (es. "5 SETS (2:00 AMRAP)" → 5, oppure "ogni 1:30 per 7 round" → 7). Usa SEMPRE questo campo (non "sets" sui movimenti) quando il numero di round è dichiarato a livello di sezione/intervallo. Ometti se non indicato.' },
             movements: {
@@ -32,7 +32,7 @@ const STRUCTURE_TOOL: Anthropic.Tool = {
                   height_cm: { type: 'number', description: 'Per box jump.' },
                   distance_m: { type: 'number' },
                   calories: { type: 'number' },
-                  max_reps: { type: 'boolean', description: 'true se il movimento è "Max reps"/"AMRAP" nel tempo rimanente del round (es. "Max Push Ups in the remaining time").' },
+                  max_reps: { type: 'boolean', description: 'true se il movimento è "Max reps"/"AMRAP" nel tempo rimanente del round (es. "Max Push Ups in the remaining time"), oppure se è l\'unico movimento di un test a reps massime senza round (es. "Max Power Cleans in 5 minuti").' },
                 },
                 required: ['name'],
               },

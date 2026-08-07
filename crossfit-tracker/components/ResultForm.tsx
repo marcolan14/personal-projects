@@ -13,6 +13,7 @@ type SectionState = {
   movementWeights: string[] // per-movement weights for for_time sections
   rounds: string
   extraReps: string
+  maxReps: string
   roundReps: string[]
   minutesDone: string
   rx: boolean
@@ -31,6 +32,12 @@ type Props = {
 }
 
 const LOGGABLE = new Set(['strength', 'for_time', 'amrap', 'emom'])
+
+// A single-movement AMRAP with no fixed rounds (e.g. "Max Power Cleans in 5 min")
+// is scored purely by total reps, not by rounds+extra like a multi-movement circuit.
+function isMaxRepsOnly(sec: WodSection): boolean {
+  return sec.movements.length === 1 && !!sec.movements[0].max_reps && !(sec.rounds && sec.rounds > 1)
+}
 
 const PREDICTION_RATINGS: { value: PredictionRating; label: string }[] = [
   { value: 'too_easy', label: 'Troppo facile' },
@@ -147,6 +154,13 @@ export default function ResultForm({ workoutId, meta, profile, hasRecommendation
             fixed_rounds: sec.rounds,
             round_reps: roundReps,
             total_reps: roundReps.reduce((a, b) => a + b, 0),
+            rx: state.rx, notes: state.notes,
+          }
+        }
+        if (isMaxRepsOnly(sec)) {
+          return {
+            type: 'amrap', label: sec.label,
+            total_reps: parseInt(state.maxReps) || 0,
             rx: state.rx, notes: state.notes,
           }
         }
@@ -269,9 +283,11 @@ export default function ResultForm({ workoutId, meta, profile, hasRecommendation
               <AmrapSection
                 durationMin={sec.duration_min}
                 fixedRounds={sec.rounds}
+                singleMaxReps={isMaxRepsOnly(sec)}
                 maxRepsLabel={sec.movements.find(m => m.max_reps)?.name}
                 rounds={state.rounds}
                 extraReps={state.extraReps}
+                maxReps={state.maxReps}
                 roundReps={state.roundReps}
                 onChange={(field, val) => updateSection(realIdx, { [field]: val })}
                 onChangeRoundReps={(ri, val) => updateRoundReps(realIdx, ri, val)}
@@ -470,13 +486,15 @@ function ForTimeSection({
 }
 
 function AmrapSection({
-  durationMin, fixedRounds, maxRepsLabel, rounds, extraReps, roundReps, onChange, onChangeRoundReps,
+  durationMin, fixedRounds, singleMaxReps, maxRepsLabel, rounds, extraReps, maxReps, roundReps, onChange, onChangeRoundReps,
 }: {
   durationMin?: number
   fixedRounds?: number
+  singleMaxReps?: boolean
   maxRepsLabel?: string
   rounds: string
   extraReps: string
+  maxReps: string
   roundReps: string[]
   onChange: (field: string, val: string) => void
   onChangeRoundReps: (ri: number, val: string) => void
@@ -503,6 +521,23 @@ function AmrapSection({
           ))}
         </div>
         <p className="text-xs text-gray-500">Totale: {total}</p>
+      </div>
+    )
+  }
+
+  // Single-movement max-reps test (e.g. "Max Power Cleans in 5 min") — one plain reps input.
+  if (singleMaxReps) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-gray-400">
+          {durationMin ? `Max reps in ${durationMin} min` : 'Max reps'}
+          {maxRepsLabel ? ` — ${maxRepsLabel}` : ''}
+        </p>
+        <input type="number" inputMode="numeric" value={maxReps}
+          onChange={e => onChange('maxReps', e.target.value)}
+          placeholder="reps" min={0}
+          className="w-24 bg-gray-700 text-lg text-white placeholder-gray-500 px-3 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-center"
+        />
       </div>
     )
   }
@@ -563,6 +598,7 @@ function initSection(section: WodSection, profile: FitnessEntry[]): SectionState
     movementWeights: section.movements.map(m => m.weight_rx_kg?.toString() ?? ''),
     rounds: '',
     extraReps: '',
+    maxReps: '',
     roundReps: [],
     minutesDone: '',
     rx: true,
